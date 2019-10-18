@@ -1,5 +1,6 @@
 freedns-go/
 dev/
+build/
 
 test.go
 log.go

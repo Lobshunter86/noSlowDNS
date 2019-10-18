@@ -5,6 +5,7 @@ import (
 
 	"github.com/patrickmn/go-cache"
 
+	"./slowIP"
 	"github.com/miekg/dns"
 )
 
@@ -91,6 +92,12 @@ func (server *Server) LookupCache(query *dns.Msg) *dns.Msg {
 	if ttl > ExpireTime*time.Second {
 		ttl = ExpireTime * time.Second
 	}
+
+	// filter slow A record before cache
+	if containA(msg) {
+		filterSlow(msg)
+	}
+
 	server.Cache.Set(key, msg, ttl)
 
 	return msg
@@ -122,6 +129,52 @@ func (server *Server) LookupNet(query *dns.Msg) *dns.Msg {
 	}
 	return reply
 }
+
+func containA(res *dns.Msg) bool {
+	rrs := res.Answer
+
+	for i := 0; i < len(rrs); i++ {
+		_, ok := rrs[i].(*dns.A)
+		if ok {
+			return true
+		}
+	}
+	return false
+}
+
+// filterSlow filter slow ip in msg.Answer if there are non-slow ip in msg
+func filterSlow(msg *dns.Msg) {
+	answer := make([]dns.RR, 0)
+	for _, record := range msg.Answer {
+		rr, ok := record.(*dns.A)
+		if ok {
+			ip := rr.A.String()
+			if slowIP.IsSlowIP(ip) {
+				Debug("filter slooooooooooooow")
+				continue
+			}
+			answer = append(answer, record)
+		}
+	}
+	if len(answer) > 0 {
+		Debug("old:", msg.Answer, "new:", answer)
+		msg.Answer = answer
+	}
+}
+
+// func containSlowIP(res *dns.Msg) bool {
+// 	rrs := res.Answer
+// 	for i := 0; i < len(rrs); i++ {
+// 		rr, ok := rrs[i].(*dns.A)
+// 		if ok {
+// 			ip := rr.A.String()
+// 			if slowIP.IsSlowIP(ip) {
+// 				return true
+// 			}
+// 		}
+// 	}
+// 	return false
+// }
 
 func SERVERFAIL(query *dns.Msg) *dns.Msg {
 	reply := &dns.Msg{}
