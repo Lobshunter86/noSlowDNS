@@ -2,7 +2,7 @@ package DNS
 
 import "fmt"
 
-const DEBUG = 1
+const DEBUG = 0
 
 func Debug(a ...interface{}) {
 	if DEBUG != 0 {

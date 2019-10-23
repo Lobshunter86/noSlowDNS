@@ -1,0 +1,8 @@
+{
+    "Net": "udp",
+    "Addr": "127.0.0.1:5533",
+    "PrimaryUpstream": "223.5.5.5:53",
+    "SecondaryUpstream": "223.5.5.5:53",
+    "ExpireTime": 300,
+    "CleanupTime": 600
+}
